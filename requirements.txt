@@ -2,3 +2,6 @@ langchain
 llama_index
 transformers
 torch
+python-dotenv
+markdown2
+docutils
