@@ -5,3 +5,5 @@ torch
 python-dotenv
 markdown2
 docutils
+llama-index-embeddings-huggingface
+logging

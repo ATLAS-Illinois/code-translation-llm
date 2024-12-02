@@ -5,6 +5,7 @@ class CodeTranslator:
     def __init__(self):
         self.model_loader = RemoteModelLoader()
         self.indexer = DocumentationIndexer("../data/cpp_docs", "../data/python_docs")
+        self.indexer.create_index()
 
     def create_system_prompt(self):
         return """

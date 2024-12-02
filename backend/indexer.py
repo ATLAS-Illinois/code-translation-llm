@@ -1,27 +1,33 @@
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from embedder import CustomHFEmbedding
-import markdown2
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+import logging
+
 
 class DocumentationIndexer:
     def __init__(self, cpp_docs_path, python_docs_path):
+        logging.basicConfig(level=logging.INFO)
+        logging.info("Initializing DocumentationIndexer")
+        Settings.llm = None
+        Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
         self.cpp_docs = self.load_and_process_docs(cpp_docs_path)
         self.python_docs = self.load_and_process_docs(python_docs_path)
-        self.embedding_model = CustomHFEmbedding()
+        self.index = None
 
-        self.index = VectorStoreIndex.from_documents(
-            self.cpp_docs + self.python_docs,
-            embed_model=self.embedding_model
-        )
-    
     def load_and_process_docs(self, path):
-        docs = []
+        logging.info(f"Loading documents from {path}")
         reader = SimpleDirectoryReader(path, recursive=True)
-        for doc in reader.load_data():
-            if doc.file_name.endswith('.md'):
-                doc.text = markdown2.markdown(doc.text, extras=["strip"])
-            docs.append(doc)
-        return docs
+        return reader.load_data()
+
+    def create_index(self):
+        logging.info("Creating the index")
+        self.index = VectorStoreIndex.from_documents(self.cpp_docs + self.python_docs)
+        self.index.storage_context.persist(persist_dir="./index_storage")
+        logging.info("Index created and persisted to './index_storage'")
 
     def retrieve_docs(self, query):
+        logging.info(f"Retrieving documents for query: {query}")
+        if not self.index:
+            raise ValueError("Index is not initialized. Call create_index() first.")
         query_engine = self.index.as_query_engine()
         return query_engine.query(query)
